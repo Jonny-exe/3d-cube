@@ -6,16 +6,32 @@ from copy import deepcopy
 class Cube():
     def __init__(self, s = 17):
         # assert s % 4 == 0
+        self.rotation = -10
         self.s = s
-        self.cube = Cube.create_cube(s)
+        # self.cube = Cube.create_cube(s)
+        # Cube.print_rows(self.proyect())
+        # new_points = self.rotate(45)
+        # self.cube = Cube.create_cube(s)
+        # self.write_new_points(new_points)
+        # proyect = self.proyect() 
+        # Cube.print_rows(proyect)
+        # Cube.print_proyection(proyect)
+        # self.connect_all()
+        # proyect = self.proyect() 
+        # Cube.print_proyection(proyect)
+        for _ in range(10000):
+            self.rotate_10_and_print()
+
+    def rotate_10_and_print(self):
+        self.cube = Cube.create_cube(self.s)
         self.cube = self.write_cube(self.cube)
-        Cube.print_rows(self.proyect())
-        new_points = self.rotate(45)
-        self.cube = Cube.create_cube(s)
+        new_points = self.rotate(self.rotation + 10)
+        self.cube = Cube.create_cube(self.s)
         self.write_new_points(new_points)
-        proyect = self.proyect() 
-        Cube.print_rows(proyect)
-        Cube.print_proyection(proyect)
+        self.connect_all()
+        proyection = self.proyect() 
+        Cube.print_proyection(proyection)
+        print("---------------------------------------------------")
 
     def create_cube(s):
         return [[[0 for _ in range(s)] for _ in range(s)] for _ in range(s)]
@@ -42,31 +58,138 @@ class Cube():
     def write_new_points(self, points):
         for point in points:
             x, y, z = point
-            self.cube[z][y][x] = 1
+            try:
+                self.cube[z][y][x] = 1
+            except IndexError:
+                continue
 
     def print_rows(cube):
         pprint(cube)
 
-    def get_points(self):
+    # def normalize_points(point1, point2):
+        # x1, y1, z1 = point1
+        # x2, y2, z2 = point2
+        # return (0, 0, 0), (x1 - x2
+
+    def find_3_smallest(point, points):
+        i = 0
+        points = list(points)
+        x, y, z = point
+        results = []
+        distances = []
+        for p in points:
+            x1, y1, z1 = p
+            a = [x1 - x, y1 - y, z1 - z]
+            distance = list(map(abs, a))
+            distance = sum(distance)
+            if distance == 0:
+                continue
+            for i in range(3):
+                if len(results) < 3:
+                    results.append(p)
+                    distances.append(distance)
+                    break
+
+                if distance < distances[i]:
+                    results.pop(i)
+                    results.append(p)
+
+                    distances.pop(i)
+                    distances.append(distance)
+                    break
+
+        assert len(results) == 3
+        return results
+
+    def connect(point1: tuple, point2: tuple):
+        x1, y1, z1 = point1
+        x2, y2, z2 = point2
+        distances = (x1 - x2, y1 - y2, z1 - z2)
+        distances = tuple(map(abs, distances))
+        bigest = (0, 0)
+        for i, distance in enumerate(distances):
+            if i > bigest[1]:
+                bigest = (i, distance)
+        bigest_index = bigest[0]
+
+        a1, a2 = point1[bigest_index], point2[bigest_index]
+        if a1 > a2:
+            a1, a2 = a2, a1
+
+        # x1 has to be always smaller
+        for a in range(a1, a2):
+            arg = [None, None, None]
+            arg[bigest_index] = a
+            if point1[bigest_index] > point2[bigest_index]:
+                point1, point2 = point2, point1
+            yield Cube.connect3d(point1, point2, tuple(arg))
+
+    def connect3d(point1: tuple, point2: tuple, new_point: tuple) -> list:
+        # Formula new_point = point1 + t * point2
+        #                     always (0, 0, 0) so we can remove it
+        x, y, z = new_point
+        if (x != None and y != None) or (x != None and z != None) or (y != None and z != None) or (x == None and y == None and z == None):
+            raise (ValueError, "There must only be one known value")
+
+        for i in range(len(new_point)):
+            if new_point[i] != None:
+                a = i
+        # If a 0 its x, if 1 its y, if its 2 z
+
+        # a = x if x not None else y if y not None else z 
+        result = [0, 0, 0]
+        b = (a + 1) % 3
+        c = (a + 2) % 3
+        # This may generate a negative number
+        t = (new_point[a] - point1[a]) / (point2[a] - point1[a])
+        result[b] = point1[b] + t * (point2[b] - point1[b])
+        result[c] = point1[c] + t * (point2[c] - point1[c])
+        result[a] = new_point[a]
+        return tuple(map(round, result))
+
+
+    def connect_all(self):
+        points = self.get_points()
+        all_new_points = []
+
+        for point in points:
+            connection_points = Cube.find_3_smallest(point, points)
+
+            result_points = []
+            for connection_point in connection_points:
+                all_new_points.append(Cube.connect(connection_point, point))
+
+        all_points = []
+        for i in all_new_points: 
+            for a in i:
+                all_points.append(a)
+        self.write_new_points(all_points)
+
+
+    def get_points(self) -> list:
+        result = []
         cube = deepcopy(self.cube)
         for z in range(len(cube)):
             for y in range(len(cube[z])):
                 for x in range(len(cube[y])):
                     if self.cube[z][y][x]:
-                        yield (x, y, z)
+                        # yield (x, y, z)
+                        result.append((x, y, z))
+        return result
 
     def print_proyection(proyection):
         for i in proyection:
             s = ""
             for x in i:
                 if x == 1:
-                    s += "✅"
+                    s += " #"
                 else:
-                    s += "❌"
+                    s += " ."
             print(f"{s}")
 
 
     def rotate(self, angle: int):
+        self.rotation = angle
         points = self.get_points()
         angle = math.radians(angle)
 
@@ -92,11 +215,9 @@ class Cube():
         for point in points:
             x, y, z = point
             x, y, z = transform(x), transform(y), transform(z)
-            print(x, y, z)
             new_x = sum([cos(angle) * x, -sin(angle) * y, 0])
             new_y = sum([0, 0, z])
             new_z = sum([sin(angle) * x, cos(angle) * y, 0])
-            print(round(new_x), round(new_y), round(new_z))
 
             result.append((de_transform(new_x), de_transform(new_y), de_transform(new_z)))
         return result
