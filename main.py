@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # TODO: make it work with colors
 import curses
+import argparse
 import math
 import os
 import sys
@@ -12,10 +13,22 @@ from symbols import symbols
 
 
 class Cube:
-    def __init__(self, s=17):
+
+    def __init__(self, s=17, color="white"):
+        COLORS = {
+            "black": curses.COLOR_BLACK,
+            "white": curses.COLOR_WHITE,
+            "magenta": curses.COLOR_MAGENTA,
+            "blue": curses.COLOR_BLUE,
+            "green": curses.COLOR_GREEN,
+            "red": curses.COLOR_RED
+        }
         self.rotation = -15
         self.s = s
         self.screen = curses.initscr()
+        curses.start_color()
+        curses.init_pair(1, COLORS[color], curses.COLOR_BLACK)
+
         while 1:
             try:
                 self.rotate_and_print()
@@ -39,7 +52,7 @@ class Cube:
 
     def window_print(self, proyection):
         self.screen.clear()
-        self.screen.addstr(proyection)
+        self.screen.addstr(proyection, curses.color_pair(1))
         self.screen.refresh()
         curses.napms(1)
 
@@ -300,6 +313,12 @@ class Cube:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='A spinning Cube')
+    parser.add_argument('-c', help='Colors', type=str, default="white")
+
+
+    args = parser.parse_args()
+
     terminal_size = os.get_terminal_size()
     size = (
         terminal_size.lines
@@ -307,4 +326,5 @@ if __name__ == "__main__":
         else terminal_size.columns
     )
     size = size - 1 - (size % 2)
-    cube = Cube(size)
+    cube = Cube(size, args.c)
+
