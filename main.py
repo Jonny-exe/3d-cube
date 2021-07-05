@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 from pprint import pprint
+from symbols import symbols
 import math
 from math import cos, sin
 from copy import deepcopy
 class Cube():
     def __init__(self, s = 17):
         # assert s % 4 == 0
-        self.rotation = -10
+        self.rotation = -15
         self.s = s
         # self.cube = Cube.create_cube(s)
         # Cube.print_rows(self.proyect())
@@ -20,17 +21,17 @@ class Cube():
         # proyect = self.proyect() 
         # Cube.print_proyection(proyect)
         for _ in range(10):
-            self.rotate_10_and_print()
+            self.rotate_and_print()
 
-    def rotate_10_and_print(self):
+    def rotate_and_print(self):
         self.cube = Cube.create_cube(self.s)
         self.cube = self.write_cube(self.cube)
-        new_points = self.rotate(self.rotation + 10)
+        new_points = self.rotate(self.rotation + 15)
         self.cube = Cube.create_cube(self.s)
         self.write_new_points(new_points)
         self.connect_all()
-        proyection = self.proyect()
-        Cube.print_proyection(proyection)
+        proyection = self.proyect_with_depth()
+        Cube.print_proyection_with_depth(proyection)
         print("---------------------------------------------------")
 
     def create_cube(s):
@@ -181,6 +182,21 @@ class Cube():
                     s += " ."
             print(f"{s}")
 
+    def print_proyection_with_depth(proyection):
+        for i in proyection:
+            s = ""
+            for x in i:
+                if type(x) == tuple:
+                    on, depth = x
+                else:
+                    on = x
+                if on:
+                    depth = round(depth * len(symbols) / len(proyection))
+                    s += f" {symbols[depth]}"
+                else:
+                    s += " ."
+            print(f"{s}")
+
 
     def rotate(self, angle: int):
         self.rotation = angle
@@ -224,6 +240,17 @@ class Cube():
                 for z in range(len(self.cube[i][x])):
                     if self.cube[i][x][z] == 1:
                         result[x][z] = 1
+        return result
+
+    def proyect_with_depth(self):
+        # TODO: proyect with closer things bigger and things at the end smaller
+        result = [[0 for _ in range(self.s)] for _ in range(self.s)]
+        for i in range(len(self.cube) - 1, -1, -1):
+            for x in range(len(self.cube[i])):
+                for z in range(len(self.cube[i][x])):
+                    if self.cube[i][x][z] == 1:
+                        #             (on/off, depth)
+                        result[x][z] = (1, i)
         return result
 
 if __name__ == "__main__":
