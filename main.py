@@ -19,7 +19,7 @@ class Cube():
         # self.connect_all()
         # proyect = self.proyect() 
         # Cube.print_proyection(proyect)
-        for _ in range(10000):
+        for _ in range(10):
             self.rotate_10_and_print()
 
     def rotate_10_and_print(self):
@@ -29,7 +29,7 @@ class Cube():
         self.cube = Cube.create_cube(self.s)
         self.write_new_points(new_points)
         self.connect_all()
-        proyection = self.proyect() 
+        proyection = self.proyect()
         Cube.print_proyection(proyection)
         print("---------------------------------------------------")
 
@@ -65,11 +65,6 @@ class Cube():
 
     def print_rows(cube):
         pprint(cube)
-
-    # def normalize_points(point1, point2):
-        # x1, y1, z1 = point1
-        # x2, y2, z2 = point2
-        # return (0, 0, 0), (x1 - x2
 
     def find_3_smallest(point, points):
         i = 0
@@ -108,7 +103,7 @@ class Cube():
         distances = tuple(map(abs, distances))
         bigest = (0, 0)
         for i, distance in enumerate(distances):
-            if i > bigest[1]:
+            if distance > bigest[1]:
                 bigest = (i, distance)
         bigest_index = bigest[0]
 
@@ -158,9 +153,8 @@ class Cube():
             result_points = []
             for connection_point in connection_points:
                 all_new_points.append(Cube.connect(connection_point, point))
-
         all_points = []
-        for i in all_new_points: 
+        for i in all_new_points:
             for a in i:
                 all_points.append(a)
         self.write_new_points(all_points)
