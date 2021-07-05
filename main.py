@@ -71,7 +71,7 @@ class Cube():
         i = 0
         points = list(points)
         x, y, z = point
-        results = []
+        # results = []
         distances = []
         for p in points:
             x1, y1, z1 = p
@@ -81,19 +81,20 @@ class Cube():
             if distance == 0:
                 continue
             for i in range(3):
-                if len(results) < 3:
-                    results.append(p)
-                    distances.append(distance)
+                if len(distances) < 3:
+                    # results.append(p)
+                    distances.append((distance, p))
                     break
 
-                if distance < distances[i]:
-                    results.pop(i)
-                    results.append(p)
-
-                    distances.pop(i)
-                    distances.append(distance)
+                if distance < distances[i][0]:
+                    # results.pop(i)
+                    # results.insert(i, p)
+                    distances.pop()
+                    distances.insert(i, (distance, p))
                     break
+                distances.sort(key=lambda x: x[0])
 
+        results = [x[1] for x in distances]
         assert len(results) == 3
         return results
 
@@ -191,7 +192,7 @@ class Cube():
                 else:
                     on = x
                 if on:
-                    depth = round(depth * len(symbols) / len(proyection))
+                    depth = len(symbols) - round(depth * len(symbols) / len(proyection))
                     s += f" {symbols[depth]}"
                 else:
                     s += " ."
