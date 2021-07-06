@@ -32,6 +32,7 @@ class Cube:
         self.screen = curses.initscr()
         curses.start_color()
         curses.init_pair(1, COLORS[color], curses.COLOR_BLACK)
+        curses.curs_set(0)
 
         while 1:
             try:
@@ -53,7 +54,6 @@ class Cube:
         self.connect_all()
         proyection = self.proyect_with_depth()
         proyection = self.get_proyection_string(proyection)
-        # print(proyection)
         self.window_print(proyection)
 
     def window_print(self, proyection):
@@ -218,6 +218,7 @@ class Cube:
             print(f"{s}")
 
     def get_proyection_string(self, proyection):
+        columns = os.get_terminal_size().columns
         result = ""
         if self.verbose:
             for i in range(41):
@@ -225,10 +226,9 @@ class Cube:
             result += "\n"
         idx = 0
         for i in proyection:
+            s = "".ljust(int((columns - self.s * 2) / 2), " ")
             if self.verbose:
-                s = f"{idx} "
-            else:
-                s = ""
+                s += f"{idx} "
             idx1 = 0
             for x in i:
                 if type(x) == tuple:
