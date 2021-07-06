@@ -89,7 +89,7 @@ class Cube:
         for point in points:
             x, y, z = point
             try:
-                self.cube[z][y][x] = 1
+                self.cube[x][z][y] = 1
             except IndexError:
                 continue
 
@@ -185,10 +185,10 @@ class Cube:
     def get_points(self) -> list:
         result = []
         cube = deepcopy(self.cube)
-        for z in range(len(cube)):
-            for y in range(len(cube[z])):
-                for x in range(len(cube[y])):
-                    if self.cube[z][y][x]:
+        for x in range(len(cube)):
+            for z in range(len(cube[x])):
+                for y in range(len(cube[z])):
+                    if self.cube[x][z][y]:
                         # yield (x, y, z)
                         result.append((x, y, z))
         return result
