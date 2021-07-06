@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# TODO: make it work with colors
+import time
 import curses
 import argparse
 import math
@@ -14,24 +14,28 @@ from symbols import symbols
 
 class Cube:
 
-    def __init__(self, s=17, color="white"):
+    def __init__(self, s=17, color="white", verbose=False, rotation_start=(0, 0, 0), rotation_inc=(15, 15, 15)):
+        self.verbose = verbose
         COLORS = {
             "black": curses.COLOR_BLACK,
             "white": curses.COLOR_WHITE,
             "magenta": curses.COLOR_MAGENTA,
             "blue": curses.COLOR_BLUE,
             "green": curses.COLOR_GREEN,
-            "red": curses.COLOR_RED
+            "red": curses.COLOR_RED,
+            "yellow": curses.COLOR_YELLOW
         }
-        self.rotation = -15
+        self.rotation_cur = rotation_start
+        self.rotation_inc = rotation_inc
         self.s = s
-        self.screen = curses.initscr()
-        curses.start_color()
-        curses.init_pair(1, COLORS[color], curses.COLOR_BLACK)
+        # self.screen = curses.initscr()
+        # curses.start_color()
+        # curses.init_pair(1, COLORS[color], curses.COLOR_BLACK)
 
         while 1:
             try:
                 self.rotate_and_print()
+                time.sleep( 0.2 )
             except KeyboardInterrupt:
                 curses.endwin()
                 sys.exit()
@@ -40,31 +44,33 @@ class Cube:
         self.cube = Cube.create_cube(self.s)
         self.cube = self.write_cube(self.cube)
         inc = 3
+        rx, ry, rz = self.rotation_cur
+        ix, iy, iz = self.rotation_inc
         new_points = self.rotate(
-            self.rotation + inc, self.rotation + inc, self.rotation + inc
         )
         self.cube = Cube.create_cube(self.s)
         self.write_new_points(new_points)
         self.connect_all()
         proyection = self.proyect_with_depth()
-        proyection = Cube.get_proyection_string(proyection)
-        self.window_print(proyection)
+        proyection = self.get_proyection_string(proyection)
+        print(proyection)
+        # self.window_print(proyection)
 
     def window_print(self, proyection):
-        self.screen.clear()
+        # self.screen.clear()
+        self.screen.erase()
         self.screen.addstr(proyection, curses.color_pair(1))
         self.screen.refresh()
-        curses.napms(1)
+        # curses.napms(5)
 
     def create_cube(s):
         return [[[0 for _ in range(s)] for _ in range(s)] for _ in range(s)]
 
     def write_cube(self, cube):
+        # self.screen.erase()
         s = self.s / 2  # Maybe this needs a round
         long = math.ceil(int(s / 2 + s))
         short = math.floor(int(s / 2))
-        # long = round(int(s / 2 + s))
-        # short = round(int(s / 2))
 
         cube[short][short][short] = 1
 
@@ -94,27 +100,18 @@ class Cube:
         i = 0
         points = list(points)
         x, y, z = point
-        distances = []
+        distances = [(float("inf"), 0)] * 3
         for p in points:
             x1, y1, z1 = p
-            a = [x1 - x, y1 - y, z1 - z]
-            distance = list(map(abs, a))
-            distance = sum(distance)
+            distance = [(x1 - x) ** 2, (y1 - y) ** 2, (z1 - z) ** 2]
+            distance = math.sqrt(sum(distance))
             if distance == 0:
                 continue
             for i in range(3):
-                if len(distances) < 3:
-                    # results.append(p)
-                    distances.append((distance, p))
-                    break
-
                 if distance < distances[i][0]:
-                    # results.pop(i)
-                    # results.insert(i, p)
                     distances.pop()
                     distances.insert(i, (distance, p))
                     break
-                distances.sort(key=lambda x: x[0])
 
         results = [x[1] for x in distances]
         assert len(results) == 3
@@ -221,10 +218,19 @@ class Cube:
                     s += " ."
             print(f"{s}")
 
-    def get_proyection_string(proyection):
+    def get_proyection_string(self, proyection):
         result = ""
+        if self.verbose:
+            for i in range(41):
+                result += " " + str(i % 10)
+            result += "\n"
+        idx = 0
         for i in proyection:
-            s = ""
+            if self.verbose:
+                s = f"{idx} "
+            else:
+                s = ""
+            idx1 = 0
             for x in i:
                 if type(x) == tuple:
                     on, depth = x
@@ -239,16 +245,23 @@ class Cube:
                     s += f" {symbols[depth]}"
                 else:
                     s += "  "
+                idx1 += 1
             result += s + "\n"
+            idx += 1
         return result
 
-    def rotate(self, angle_x: float, angle_y: float, angle_z: float):
-        self.rotation = angle_y
+    def rotate(self):
+        rx, ry, rz = self.rotation_cur
+        ix, iy, iz = self.rotation_inc
+        self.rotation_cur = tuple(map(lambda x: x % 360, (rx + ix, ry + iy, rz + iz)))
+
+
+        print(rx, ry, rz)
         points = self.get_points()
         angle_x, angle_y, angle_z = (
-            math.radians(angle_x),
-            math.radians(angle_y),
-            math.radians(angle_z),
+            math.radians(rx),
+            math.radians(ry),
+            math.radians(rz),
         )
 
         def transform(point):
@@ -275,17 +288,17 @@ class Cube:
             x, y, z = point
             x, y, z = transform(x), transform(y), transform(z)
 
-            x1 = sum([cos(angle_x) * x, -sin(angle_x) * y, 0])
-            y1 = sum([0, 0, z])
-            z1 = sum([sin(angle_x) * x, cos(angle_x) * y, 0])
+            x1 = sum([x, 0, 0])
+            y1 = sum([0, cos(angle_x) * y, -sin(angle_x) * z])
+            z1 = sum([0, sin(angle_x) * y, cos(angle_x) * z])
 
-            x3 = sum([cos(angle_y) * x1, -sin(angle_y) * y1, 0])
-            y3 = sum([0, 0, z1])
-            z3 = sum([sin(angle_y) * x1, cos(angle_y) * y1, 0])
+            x2 = sum([cos(angle_y) * x1, 0, sin(angle_y) * z1])
+            y2 = sum([0, y1, 0])
+            z2 = sum([-sin(angle_y) * x1, 0, cos(angle_y) * z1])
 
-            # x3 = sum([cos(angle_z) * x2, -sin(angle_z) * y2, 0])
-            # y3 = sum([0, 0, z2])
-            # z3 = sum([sin(angle_z) * x2, cos(angle_z) * y2, 0])
+            x3 = sum([cos(angle_z) * x2, -sin(angle_z) * y2, 0])
+            y3 = sum([sin(angle_z) * x2, cos(angle_z) * y2, 0])
+            z3 = sum([0, 0, z2])
 
             result.append((de_transform(x3), de_transform(y3), de_transform(z3)))
         return result
@@ -315,7 +328,13 @@ class Cube:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='A spinning Cube')
     parser.add_argument('-c', help='Colors', type=str, default="white")
+    parser.add_argument('-x', help='X axis rotation at the start', type=int, default=0)
+    parser.add_argument('-y', help='Y axis rotation at the start', type=int, default=0)
+    parser.add_argument('-z', help='Z axis rotation at the start', type=int, default=0)
 
+    parser.add_argument('-ix', help='X axis rotation increase each frame', type=int, default=15)
+    parser.add_argument('-iy', help='Y axis rotation increase each frame', type=int, default=15)
+    parser.add_argument('-iz', help='Z axis rotation increase each frame', type=int, default=15)
 
     args = parser.parse_args()
 
@@ -326,5 +345,10 @@ if __name__ == "__main__":
         else terminal_size.columns
     )
     size = size - 1 - (size % 2)
-    cube = Cube(size, args.c)
+
+    rotation_start = (args.x, args.y, args.z)
+    rotation_inc = (args.ix, args.iy, args.iz)
+    # cube = Cube(size, args.c, rotation_start=rotation_start, rotation_inc=rotation_inc)
+    cube = Cube(41, args.c, rotation_start=rotation_start, rotation_inc=rotation_inc)
+
 
