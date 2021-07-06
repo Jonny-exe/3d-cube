@@ -14,7 +14,7 @@ from symbols import symbols
 
 class Cube:
 
-    def __init__(self, s=17, color="white", verbose=False, rotation_start=(0, 0, 0), rotation_inc=(15, 15, 15)):
+    def __init__(self, s=17, color="white", verbose=False, rotation_start=(0, 0, 0), rotation_inc=(15, 15, 15), speed=1):
         self.verbose = verbose
         COLORS = {
             "black": curses.COLOR_BLACK,
@@ -28,14 +28,14 @@ class Cube:
         self.rotation_cur = rotation_start
         self.rotation_inc = rotation_inc
         self.s = s
-        # self.screen = curses.initscr()
-        # curses.start_color()
-        # curses.init_pair(1, COLORS[color], curses.COLOR_BLACK)
+        self.speed = speed
+        self.screen = curses.initscr()
+        curses.start_color()
+        curses.init_pair(1, COLORS[color], curses.COLOR_BLACK)
 
         while 1:
             try:
                 self.rotate_and_print()
-                time.sleep( 0.2 )
             except KeyboardInterrupt:
                 curses.endwin()
                 sys.exit()
@@ -53,15 +53,14 @@ class Cube:
         self.connect_all()
         proyection = self.proyect_with_depth()
         proyection = self.get_proyection_string(proyection)
-        print(proyection)
-        # self.window_print(proyection)
+        # print(proyection)
+        self.window_print(proyection)
 
     def window_print(self, proyection):
-        # self.screen.clear()
         self.screen.erase()
         self.screen.addstr(proyection, curses.color_pair(1))
         self.screen.refresh()
-        # curses.napms(5)
+        curses.napms(int(self.speed))
 
     def create_cube(s):
         return [[[0 for _ in range(s)] for _ in range(s)] for _ in range(s)]
@@ -256,7 +255,6 @@ class Cube:
         self.rotation_cur = tuple(map(lambda x: x % 360, (rx + ix, ry + iy, rz + iz)))
 
 
-        print(rx, ry, rz)
         points = self.get_points()
         angle_x, angle_y, angle_z = (
             math.radians(rx),
@@ -336,6 +334,8 @@ if __name__ == "__main__":
     parser.add_argument('-iy', help='Y axis rotation increase each frame', type=int, default=15)
     parser.add_argument('-iz', help='Z axis rotation increase each frame', type=int, default=15)
 
+    parser.add_argument('-s', help='Speed. Number of miliseconds before it updates the screen. Default is 1', type=float, default=1.0)
+
     args = parser.parse_args()
 
     terminal_size = os.get_terminal_size()
@@ -348,7 +348,7 @@ if __name__ == "__main__":
 
     rotation_start = (args.x, args.y, args.z)
     rotation_inc = (args.ix, args.iy, args.iz)
-    # cube = Cube(size, args.c, rotation_start=rotation_start, rotation_inc=rotation_inc)
-    cube = Cube(41, args.c, rotation_start=rotation_start, rotation_inc=rotation_inc)
+    cube = Cube(size, args.c, rotation_start=rotation_start, rotation_inc=rotation_inc, speed=args.s)
+    # cube = Cube(41, args.c, rotation_start=rotation_start, rotation_inc=rotation_inc)
 
 
