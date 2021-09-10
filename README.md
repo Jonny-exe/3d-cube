@@ -16,4 +16,7 @@ Distance between 2 points:
 
 ![3d line equation](https://github.com/Jonny-exe/3d-cube/blob/master/images/line_equation.png)
 
+# Demonstration
+![Gif of spinning cube](https://github.com/Jonny-exe/3d-cube/blob/master/images/video.gif)
+
 
